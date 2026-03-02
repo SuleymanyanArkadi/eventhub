@@ -1,0 +1,24 @@
+# Binaries
+/bin/
+/out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go build
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go modules
+vendor/
+
+# IDE/editor
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
