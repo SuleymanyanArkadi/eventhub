@@ -7,18 +7,24 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/SuleymanyanArkadi/eventhub/internal/reqid"
 )
 
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		id := reqid.FromContext(r.Context())
+		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
+
+		log.Printf("healthz served, request-id=%s", id)
 	})
 
 	srv := &http.Server{
 		Addr:         ":8080",
-		Handler:      mux,
+		Handler:      reqid.Middleware(mux),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
