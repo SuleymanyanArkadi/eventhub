@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/SuleymanyanArkadi/eventhub/internal/logging"
 	"github.com/SuleymanyanArkadi/eventhub/internal/reqid"
 )
 
@@ -22,9 +23,11 @@ func main() {
 		log.Printf("healthz served, request-id=%s", id)
 	})
 
+	handler := reqid.Middleware(logging.Middleware(mux))
+
 	srv := &http.Server{
 		Addr:         ":8080",
-		Handler:      reqid.Middleware(mux),
+		Handler:      handler,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
