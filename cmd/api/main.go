@@ -10,19 +10,17 @@ import (
 
 	"github.com/SuleymanyanArkadi/eventhub/internal/logging"
 	"github.com/SuleymanyanArkadi/eventhub/internal/reqid"
+	"github.com/SuleymanyanArkadi/eventhub/internal/store"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		id := reqid.FromContext(r.Context())
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
+	// Создаём in-memory store
+	s := store.NewMemoryStore()
 
-		log.Printf("healthz served, request-id=%s", id)
-	})
+	// Создаём маршруты, связанные с store
+	mux := makeHandlers(s)
 
+	// Оборачиваем middleware: сначала reqid (чтобы id был в контексте), затем logging
 	handler := reqid.Middleware(logging.Middleware(mux))
 
 	srv := &http.Server{
@@ -33,7 +31,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Graceful shutdown
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		sigCh := make(chan os.Signal, 1)
@@ -49,8 +46,9 @@ func main() {
 
 	log.Printf("API server listening on %s", srv.Addr)
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("Server error: %v", err)
+		log.Fatalf("server error: %v", err)
 	}
+
 	<-idleConnsClosed
-	log.Println("Server stopped")
+	log.Println("server stopped")
 }
